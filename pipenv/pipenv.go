@@ -1,6 +1,12 @@
 package pipenv
 
 import (
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
@@ -49,12 +55,32 @@ func (n Contributor) Contribute() error {
 			return err
 		}
 
-		if output, err := n.runner.RunWithOutput("python", layer.Root, "-m", "pip", "install", "pipenv", "--find-links="+layer.Root); err != nil {
-			return errors.Wrap(err, "python failed to run pip : "+string(output))
-		} else {
-			n.context.Logger.Info(string(output))
+		if err := n.runner.Run("python", layer.Root, "-m", "pip", "install", "pipenv", "--find-links="+layer.Root); err != nil {
+			return err
 		}
 
-		return n.runner.Run("pipenv", layer.Root, "lock", "--requirements")
+		cmd := exec.Command("pipenv", "lock", "--requirements")
+		cmd.Dir = n.context.Application.Root
+		cmd.Env = append(os.Environ(), "VIRTUALENV_NEVER_DOWNLOAD=true")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return errors.Wrap(err, "something wrong "+string(output))
+		}
+
+		outputString := string(output)
+		n.context.Logger.Info("%s\n", outputString)
+		// Remove output due to virtualenv
+		if strings.Contains(outputString, "virtualenv") {
+			reqs := strings.SplitN(outputString, "\n", 2)
+			if len(reqs) > 0 {
+				outputString = reqs[1]
+			}
+		}
+
+		if err = ioutil.WriteFile(filepath.Join(n.context.Application.Root, "requirements.txt"), []byte(outputString), 0644); err != nil {
+			return err
+		}
+
+		return nil
 	}, layers.Build, layers.Cache)
 }
