@@ -14,21 +14,21 @@ github.com/buildpack/libbuildpack/logger
 github.com/buildpack/libbuildpack/platform
 github.com/buildpack/libbuildpack/services
 github.com/buildpack/libbuildpack/stack
-# github.com/cloudfoundry/cnb-tools v0.0.0 => /Users/pivotal/workspace/cnb-tools
+# github.com/cloudfoundry/cnb-tools v0.0.0-20190219172305-154ea1cc62b2
 github.com/cloudfoundry/cnb-tools/install_tools
 github.com/cloudfoundry/cnb-tools/integration
 github.com/cloudfoundry/cnb-tools/package
 github.com/cloudfoundry/cnb-tools/unit
 github.com/cloudfoundry/cnb-tools/action
 github.com/cloudfoundry/cnb-tools/utils
-# github.com/cloudfoundry/dagger v0.0.0-20190219165033-d9b29e00cb50
+# github.com/cloudfoundry/dagger v0.0.0-20190313184438-278c8cdee22d
 github.com/cloudfoundry/dagger
 # github.com/cloudfoundry/libcfbuildpack v1.47.0
 github.com/cloudfoundry/libcfbuildpack/build
+github.com/cloudfoundry/libcfbuildpack/runner
 github.com/cloudfoundry/libcfbuildpack/detect
 github.com/cloudfoundry/libcfbuildpack/helper
 github.com/cloudfoundry/libcfbuildpack/layers
-github.com/cloudfoundry/libcfbuildpack/runner
 github.com/cloudfoundry/libcfbuildpack/buildpack
 github.com/cloudfoundry/libcfbuildpack/logger
 github.com/cloudfoundry/libcfbuildpack/services
@@ -36,6 +36,8 @@ github.com/cloudfoundry/libcfbuildpack/test
 github.com/cloudfoundry/libcfbuildpack/internal
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
+# github.com/golang/mock v1.2.0
+github.com/golang/mock/gomock
 # github.com/mattn/go-colorable v0.1.1
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.6

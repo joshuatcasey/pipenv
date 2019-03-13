@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/cloudfoundry/pipenv-cnb/pipenv"
-	"os"
-	"path/filepath"
 )
 
 func main() {
@@ -31,6 +32,13 @@ func runDetect(context detect.Detect) (int, error) {
 		return detect.FailStatusCode, err
 	} else if !exists {
 		context.Logger.Info("no Pipfile found")
+		return detect.FailStatusCode, nil
+	}
+
+	if exists, err := helper.FileExists(filepath.Join(context.Application.Root, "requirements.txt")); err != nil {
+		return detect.FailStatusCode, err
+	} else if exists {
+		context.Logger.Error("found Pipfile + requirements.txt")
 		return detect.FailStatusCode, nil
 	}
 

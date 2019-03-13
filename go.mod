@@ -4,8 +4,8 @@ go 1.12
 
 require (
 	github.com/buildpack/libbuildpack v1.11.0
-	github.com/cloudfoundry/cnb-tools v0.0.0
-	github.com/cloudfoundry/dagger v0.0.0-20190219165033-d9b29e00cb50
+	github.com/cloudfoundry/cnb-tools v0.0.0-20190219172305-154ea1cc62b2
+	github.com/cloudfoundry/dagger v0.0.0-20190313184438-278c8cdee22d
 	github.com/cloudfoundry/libcfbuildpack v1.47.0
 	github.com/golang/mock v1.2.0
 	github.com/google/pprof v0.0.0-20190309163659-77426154d546 // indirect
@@ -16,5 +16,3 @@ require (
 	golang.org/x/arch v0.0.0-20190226203302-36aee92af9e8 // indirect
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 // indirect
 )
-
-replace github.com/cloudfoundry/cnb-tools => /Users/pivotal/workspace/cnb-tools

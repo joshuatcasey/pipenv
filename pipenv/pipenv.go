@@ -2,10 +2,7 @@ package pipenv
 
 import (
 	"io/ioutil"
-	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
@@ -52,34 +49,28 @@ func (n Contributor) Contribute() error {
 	return layer.Contribute(func(artifact string, layer layers.DependencyLayer) error {
 		layer.Logger.SubsequentLine("Expanding to %s", layer.Root)
 		if err := helper.ExtractTarGz(artifact, layer.Root, 0); err != nil {
-			return err
+			return errors.Wrap(err, "problem extracting")
 		}
 
 		if err := n.runner.Run("python", layer.Root, "-m", "pip", "install", "pipenv", "--find-links="+layer.Root); err != nil {
-			return err
+			return errors.Wrap(err, "problem installing pipenv")
 		}
 
-		cmd := exec.Command("pipenv", "lock", "--requirements")
-		cmd.Dir = n.context.Application.Root
-		cmd.Env = append(os.Environ(), "VIRTUALENV_NEVER_DOWNLOAD=true")
-		output, err := cmd.CombinedOutput()
+		// Generate the initial Pipfile.lock
+		if err := n.runner.Run("pipenv", n.context.Application.Root, "lock", "--requirements"); err != nil {
+			return errors.Wrap(err, "problem generating initial Pipfile.lock")
+		}
+
+		// When we run this a second time, we get the output we care about without extraneous logging
+		requirements, err := n.runner.RunWithOutput("pipenv", n.context.Application.Root, "lock", "--requirements")
 		if err != nil {
-			return errors.Wrap(err, "something wrong "+string(output))
+			return errors.Wrap(err, "problem with reading requirements from Pipfile.lock")
 		}
 
-		outputString := string(output)
-		n.context.Logger.Info("%s\n", outputString)
-		// Remove output due to virtualenv
-		if strings.Contains(outputString, "virtualenv") {
-			reqs := strings.SplitN(outputString, "\n", 2)
-			if len(reqs) > 0 {
-				outputString = reqs[1]
-			}
+		if err = ioutil.WriteFile(filepath.Join(n.context.Application.Root, "requirements.txt"), requirements, 0644); err != nil {
+			return errors.Wrap(err, "problem writing requirements")
 		}
-
-		if err = ioutil.WriteFile(filepath.Join(n.context.Application.Root, "requirements.txt"), []byte(outputString), 0644); err != nil {
-			return err
-		}
+		//TODO: The script flask is installed in '/workspace/org.cloudfoundry.buildpacks.pip/python_packages/bin' which is not on PATH.
 
 		return nil
 	}, layers.Build, layers.Cache)

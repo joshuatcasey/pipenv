@@ -45,7 +45,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
 				"pipenv": buildplan.Dependency{
 					Metadata: buildplan.Metadata{
-						"build":  true,
+						"build": true,
 					},
 				},
 				"python": buildplan.Dependency{
@@ -61,6 +61,14 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			}))
+		})
+
+		it("has a requirements.txt", func() {
+			Expect(helper.WriteFile(filepath.Join(factory.Detect.Application.Root, "requirements.txt"), 0666, "")).To(Succeed())
+			code, err := runDetect(factory.Detect)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(code).To(Equal(detect.FailStatusCode))
+
 		})
 	})
 }

@@ -58,7 +58,9 @@ func testPipenv(t *testing.T, when spec.G, it spec.S) {
 
 	when("Contribute", func() {
 		it("installs pipenv and converts Pipfile to requirements.txt", func() {
+			mockRunner.EXPECT().Run("python", f.Build.Layers.Layer(pipenv.Layer).Root, "-m", "pip", "install", "pipenv", "--find-links="+f.Build.Layers.Layer(pipenv.Layer).Root)
 			mockRunner.EXPECT().Run("pipenv", f.Build.Application.Root, "lock", "--requirements")
+			mockRunner.EXPECT().RunWithOutput("pipenv", f.Build.Application.Root, "lock", "--requirements")
 			pipenvStub := filepath.Join("testdata", "stub-pipenv.tar.gz")
 			f.AddBuildPlan(pipenv.Layer, buildplan.Dependency{})
 			f.AddDependency(pipenv.Layer, pipenvStub)
