@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
+
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
@@ -16,6 +18,11 @@ func main() {
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed to create default detect context: %s", err)
 		os.Exit(100)
+	}
+
+	if err := context.BuildPlan.Init(); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Failed to initialize Build Plan: %s\n", err)
+		os.Exit(101)
 	}
 
 	code, err := runDetect(context)
@@ -42,8 +49,28 @@ func runDetect(context detect.Detect) (int, error) {
 		return detect.FailStatusCode, nil
 	}
 
+	pipfileLockExists, err := helper.FileExists(filepath.Join(context.Application.Root, "Pipfile.lock"))
+	if err != nil {
+		return detect.FailStatusCode, errors.Wrap(err, "error checking for pipfile.lock")
+	}
+
+	pythonVersion := context.BuildPlan[pipenv.PythonLayer].Version
+	if pipfileLockExists {
+		pipfileVersion, err := pipenv.GetPythonVersionFromPipfileLock(filepath.Join(context.Application.Root, "Pipfile.lock"))
+		if err != nil {
+			return detect.FailStatusCode, errors.Wrap(err, "error reading python version from pipfile.lock")
+		}
+
+		if pythonVersion == "" && pipfileVersion != "" {
+			pythonVersion = pipfileVersion
+		} else if pythonVersion != "" && pipfileVersion != "" && pythonVersion != pipfileVersion {
+			context.Logger.Info("There is a mismatch of your python version between either your buildpack.yml and Pipfile.lock")
+		}
+	}
+
 	return context.Pass(buildplan.BuildPlan{
 		pipenv.PythonLayer: buildplan.Dependency{
+			Version:  pythonVersion,
 			Metadata: buildplan.Metadata{"build": true, "launch": true},
 		},
 		pipenv.Layer: buildplan.Dependency{

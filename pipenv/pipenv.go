@@ -1,6 +1,7 @@
 package pipenv
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
 
@@ -17,6 +18,14 @@ const (
 	PythonPackagesLayer = "python_packages"
 )
 
+type PipfileLock struct {
+	Meta struct {
+		Requires struct {
+			Version string `json:"python_version"`
+		} `json:"requires"`
+	} `json:"_meta"`
+}
+
 type Contributor struct {
 	context build.Build
 	runner  runner.Runner
@@ -31,6 +40,21 @@ func NewContributor(context build.Build, runner runner.Runner) (Contributor, boo
 	contributor := Contributor{context: context, runner: runner}
 
 	return contributor, true, nil
+}
+
+func GetPythonVersionFromPipfileLock(fullPath string) (string, error) {
+	file, err := ioutil.ReadFile(fullPath)
+	if err != nil {
+		return "", err
+	}
+	pipfileLock := PipfileLock{}
+	err = json.Unmarshal(file, &pipfileLock)
+	if err != nil {
+		return "", err
+	}
+
+	return pipfileLock.Meta.Requires.Version, nil
+
 }
 
 func (n Contributor) Contribute() error {

@@ -1,6 +1,9 @@
 package pipenv_test
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -73,6 +76,69 @@ func testPipenv(t *testing.T, when spec.G, it spec.S) {
 			layer := f.Build.Layers.Layer("pipenv")
 			Expect(layer).To(test.HaveLayerMetadata(true, true, false))
 			Expect(filepath.Join(layer.Root, "stub-dir", "stub.txt")).To(BeARegularFile())
+		})
+	})
+
+	when("GetPythonVersionFromPipfileLock for pipfile.lock", func() {
+		it("reads pipfile.lock and extracts Python version", func() {
+			tmpFile, err := ioutil.TempFile("", "Pipfile.lock")
+			Expect(err).NotTo(HaveOccurred())
+			lock := pipenv.PipfileLock{}
+			lock.Meta.Requires.Version = "1.2.3"
+			lockString, err := json.Marshal(lock)
+			Expect(err).NotTo(HaveOccurred())
+			err = ioutil.WriteFile(tmpFile.Name(), []byte(lockString), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			version, err := pipenv.GetPythonVersionFromPipfileLock(tmpFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(version).To(Equal("1.2.3"))
+		})
+
+		it("reads pipfile.lock without Python version", func() {
+			tmpFile, err := ioutil.TempFile("", "Pipfile.lock")
+			Expect(err).NotTo(HaveOccurred())
+			lock := pipenv.PipfileLock{}
+			lockString, err := json.Marshal(lock)
+			Expect(err).NotTo(HaveOccurred())
+			err = ioutil.WriteFile(tmpFile.Name(), []byte(lockString), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			version, err := pipenv.GetPythonVersionFromPipfileLock(tmpFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(version).To(Equal(""))
+		})
+	})
+
+	when("GetPythonVersionFromPipfileLock for pipfile", func() {
+		it("reads pipfile and extracts Python version", func() {
+			tmpFile, err := ioutil.TempFile("", "Pipfile.lock")
+			Expect(err).NotTo(HaveOccurred())
+
+			lock := pipenv.PipfileLock{}
+			lock.Meta.Requires.Version = "1.2.3"
+			lockString, err := json.Marshal(lock)
+			Expect(err).NotTo(HaveOccurred())
+			err = ioutil.WriteFile(tmpFile.Name(), []byte(lockString), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			version, err := pipenv.GetPythonVersionFromPipfileLock(tmpFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(version).To(Equal("1.2.3"))
+		})
+
+		it("reads pipfile.lock without Python version", func() {
+			tmpFile, err := ioutil.TempFile("", "Pipfile.lock")
+			Expect(err).NotTo(HaveOccurred())
+			lock := pipenv.PipfileLock{}
+			lockString, err := json.Marshal(lock)
+			Expect(err).NotTo(HaveOccurred())
+			err = ioutil.WriteFile(tmpFile.Name(), []byte(lockString), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			version, err := pipenv.GetPythonVersionFromPipfileLock(tmpFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(version).To(Equal(""))
 		})
 	})
 }
