@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
+	"time"
 
 	"github.com/cloudfoundry/libcfbuildpack/helper"
+	"github.com/cloudfoundry/libcfbuildpack/logger"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
@@ -19,6 +22,7 @@ const (
 	Dependency               = "pipenv"
 	PythonLayer              = "python"
 	PythonPackagesLayer      = "python_packages"
+	RequirementsLayer        = "requirements"
 	PythonPackagesCacheLayer = "python_packages_cache"
 	Pipfile                  = "Pipfile"
 	LockFile                 = "Pipfile.lock"
@@ -40,12 +44,22 @@ type PipfileLock struct {
 }
 
 type Contributor struct {
-	context            build.Build
-	runner             runner.Runner
-	pipenvLayer        layers.DependencyLayer
-	packagesLayer      layers.Layer
-	packagesCacheLayer layers.Layer
-	buildContribution  bool
+	requirementsMetadata logger.Identifiable
+	context              build.Build
+	runner               runner.Runner
+	pipenvLayer          layers.DependencyLayer
+	requirementsLayer    layers.Layer
+	packagesCacheLayer   layers.Layer
+	buildContribution    bool
+}
+
+type Metadata struct {
+	Name string
+	Hash string
+}
+
+func (m Metadata) Identity() (name string, version string) {
+	return m.Name, m.Hash
 }
 
 func NewContributor(context build.Build, runner runner.Runner) (Contributor, bool, error) {
@@ -55,9 +69,10 @@ func NewContributor(context build.Build, runner runner.Runner) (Contributor, boo
 	}
 
 	contributor := Contributor{
-		context:       context,
-		runner:        runner,
-		packagesLayer: context.Layers.Layer(PythonPackagesLayer),
+		context:              context,
+		runner:               runner,
+		requirementsLayer:    context.Layers.Layer(RequirementsLayer),
+		requirementsMetadata: Metadata{RequirementsLayer, strconv.FormatInt(time.Now().UnixNano(), 16)},
 		// TODO: something cache
 	}
 
@@ -134,13 +149,17 @@ func (n Contributor) ContributeRequirementsTxt() error {
 			return errors.Wrap(err, "problem with reading requirements from Pipfile.lock")
 		}
 	}
-	if err = ioutil.WriteFile(filepath.Join(n.context.Application.Root, "requirements.txt"), requirements, 0644); err != nil {
-		return errors.Wrap(err, "problem writing requirements")
-	}
 
-	fmt.Println(">>>>>>> Application Root: ", n.context.Application.Root)
+	return n.requirementsLayer.Contribute(n.requirementsMetadata, func(layer layers.Layer) error {
+		layer.Touch()
+		layer.Logger.SubsequentLine("Writing requirements.txt to %s", layer.Root)
 
-	return nil
+		if err = helper.WriteFile(filepath.Join(layer.Root, "requirements.txt"), 0644, "%s", requirements); err != nil {
+			return errors.Wrap(err, "problem writing requirements")
+		}
+
+		return nil
+	}, layers.Build)
 }
 
 func pipfileLockToRequirementsTxt(pipfileLockPath string) ([]byte, error) {

@@ -69,7 +69,7 @@ func runDetect(context detect.Detect) (int, error) {
 				Name: pipenv.Dependency,
 			},
 			{
-				Name: pipenv.PythonPackagesLayer,
+				Name: pipenv.RequirementsLayer,
 			},
 		},
 		Requires: []buildplan.Required{

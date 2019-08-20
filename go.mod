@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/buildpack/libbuildpack v1.21.0
 	github.com/cloudfoundry/dagger v0.0.0-20190819163648-1608b353a41a
+	github.com/cloudfoundry/libbuildpack v0.0.0-20190805205250-e22ed19132ff // indirect
 	github.com/cloudfoundry/libcfbuildpack v1.83.0
 	github.com/cloudfoundry/pip-cnb v0.0.14 // indirect
 	github.com/golang/mock v1.3.1
