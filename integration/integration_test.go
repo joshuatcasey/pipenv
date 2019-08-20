@@ -45,7 +45,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("building a simple pipenv app without a pipfile lock", func() {
-		it("builds and runs", func() {
+		it.Focus("builds and runs", func() {
 			app, err := dagger.PackBuild(filepath.Join("testdata", "without_pipfile_lock"), pythonURI, pipenvURI, pipURI)
 			Expect(err).NotTo(HaveOccurred())
 			defer app.Destroy()
@@ -103,7 +103,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(err).To(HaveOccurred())
 
-			Expect(err.Error()).To(ContainSubstring("Pipenv Buildpack: fail"))
+			Expect(err.Error()).To(ContainSubstring("found Pipfile + requirements.txt"))
 
 		})
 	})
@@ -138,7 +138,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(err).To(HaveOccurred())
 
-			Expect(err.Error()).To(ContainSubstring("Pipenv Buildpack: fail"))
+			Expect(err.Error()).To(ContainSubstring("no Pipfile found"))
 		})
 	})
 }

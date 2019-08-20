@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 	"github.com/cloudfoundry/libcfbuildpack/runner"
 	"github.com/cloudfoundry/pipenv-cnb/pipenv"
 )
@@ -42,5 +43,5 @@ func runBuild(context build.Build, runner runner.Runner) (int, error) {
 		}
 	}
 
-	return context.Success()
+	return context.Success(buildpackplan.Plan{})
 }

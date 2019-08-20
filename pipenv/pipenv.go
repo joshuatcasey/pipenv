@@ -105,7 +105,7 @@ func (n Contributor) ContributePipenv() error {
 		}
 
 		return nil
-	}, layers.Build, layers.Cache)
+	}, layers.Build, layers.Launch, layers.Cache)
 }
 
 func (n Contributor) ContributeRequirementsTxt() error {
@@ -137,6 +137,8 @@ func (n Contributor) ContributeRequirementsTxt() error {
 	if err = ioutil.WriteFile(filepath.Join(n.context.Application.Root, "requirements.txt"), requirements, 0644); err != nil {
 		return errors.Wrap(err, "problem writing requirements")
 	}
+
+	fmt.Println(">>>>>>> Application Root: ", n.context.Application.Root)
 
 	return nil
 }
