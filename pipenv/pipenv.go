@@ -16,10 +16,13 @@ import (
 )
 
 const (
-	Layer                    = "pipenv"
+	Dependency               = "pipenv"
 	PythonLayer              = "python"
 	PythonPackagesLayer      = "python_packages"
 	PythonPackagesCacheLayer = "python_packages_cache"
+	Pipfile                  = "Pipfile"
+	LockFile                 = "Pipfile.lock"
+	RequirementsFile         = "requirements.txt"
 )
 
 type PipfileLock struct {
@@ -37,17 +40,28 @@ type PipfileLock struct {
 }
 
 type Contributor struct {
-	context build.Build
-	runner  runner.Runner
+	context            build.Build
+	runner             runner.Runner
+	pipenvLayer        layers.DependencyLayer
+	packagesLayer      layers.Layer
+	packagesCacheLayer layers.Layer
+	buildContribution  bool
 }
 
 func NewContributor(context build.Build, runner runner.Runner) (Contributor, bool, error) {
-	_, willContribute := context.BuildPlan[Layer]
-	if !willContribute {
-		return Contributor{}, false, nil
+	plan, willContribute, err := context.Plans.GetShallowMerged(Dependency)
+	if err != nil || !willContribute {
+		return Contributor{}, false, err
 	}
 
-	contributor := Contributor{context: context, runner: runner}
+	contributor := Contributor{
+		context:       context,
+		runner:        runner,
+		packagesLayer: context.Layers.Layer(PythonPackagesLayer),
+		// TODO: something cache
+	}
+
+	contributor.buildContribution, _ = plan.Metadata["build"].(bool)
 
 	return contributor, true, nil
 }
@@ -73,7 +87,7 @@ func (n Contributor) ContributePipenv() error {
 		return err
 	}
 
-	dep, err := deps.Best(Layer, "*", n.context.Stack)
+	dep, err := deps.Best(Dependency, "*", n.context.Stack)
 	if err != nil {
 		return err
 	}
